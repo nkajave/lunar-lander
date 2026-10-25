@@ -10,15 +10,13 @@ An interactive reinforcement-learning playground that runs entirely in the brows
 
 ## How the website works
 
-| File | What it does |
-|---|---|
-| `index.html`, `css/style.css` | The page |
-| `js/lander.js` | Gymnasium's LunarLander-v3 ported to JavaScript with [planck.js](https://piqnt.com/planck.js/) (Box2D) |
-| `js/nn.js` | A tiny neural network and Adam optimizer, no libraries |
-| `js/ppo.js` | PPO, matching Stable-Baselines3's settings |
-| `js/train-worker.js` | Runs training in a background thread so the page stays smooth |
-| `js/render.js`, `js/sound.js`, `js/chart.js`, `js/app.js` | Drawing, sound effects, learning curve, controls |
-| `models/*.json` | The three Python-trained policies, exported for the browser |
+The whole site is one file, `index.html`, so it runs on GitHub Pages with no server and nothing to install. Inside it:
+
+- Gymnasium's LunarLander-v3 ported to JavaScript with [planck.js](https://piqnt.com/planck.js/) (Box2D)
+- A tiny neural network and Adam optimizer, written from scratch
+- PPO, matching Stable-Baselines3's settings, running in a background thread so the page stays smooth
+- The three Python-trained policies, exported to JSON
+- Canvas drawing, synthesized sound effects and the learning-curve chart
 
 The port is faithful: the Python-trained models score about the same in the browser (default 230, hover 72, fixed 264) as in Python (235, 66, 260).
 
@@ -53,7 +51,7 @@ Paying +1 for every steady frame lets a hovering rocket farm up to 1,000 points,
 
 ## Run the website locally
 
-Browsers block background workers on `file://` pages, so serve the folder:
+Serve the folder (some browsers limit pages opened straight from a file):
 
 ```bash
 python -m http.server
