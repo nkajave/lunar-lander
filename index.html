@@ -441,11 +441,149 @@ a { color: var(--violet); text-underline-offset: 2px; }
 .hud .you { color: #6fe0a8; }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
 
+/* =========================================================
+   Space theme: night sky page, light "moon dust" panels
+   ========================================================= */
+:root {
+  --night: #060914;
+  --night-2: #0d1531;
+  --on-dark: #eef0f7;
+  --on-dark-2: #a9b0c6;
+  --on-dark-rule: rgba(238, 240, 247, 0.22);
+  --link-dark: #b9adff;
+  --moon: #b7bac1;
+  --moon-2: #8d9199;
+}
+html { background: var(--night); overflow-x: clip; }
+body {
+  color: var(--on-dark);
+  background:
+    radial-gradient(1200px 700px at 85% -10%, rgba(64, 110, 220, 0.28), transparent 65%),
+    radial-gradient(900px 600px at 0% 30%, rgba(106, 81, 221, 0.10), transparent 70%),
+    var(--night);
+  overflow-x: clip;
+}
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.masthead, main, footer { position: relative; z-index: 1; }
+
+/* Earth rising behind the title */
+.masthead { position: relative; padding-top: 64px; padding-bottom: 36px; }
+.earth-clip { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
+.earth {
+  position: absolute; z-index: -1; pointer-events: none;
+  width: 440px; height: 440px; right: -150px; top: -190px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 28% 72%, rgba(255, 255, 255, 0.55) 0%, transparent 18%),
+    radial-gradient(circle at 34% 66%, #8fc4ff 0%, #3a78d4 26%, #1b3b80 52%, #0a1330 74%, #060914 100%);
+  box-shadow: 0 0 90px 18px rgba(70, 130, 255, 0.28), inset -60px 40px 90px rgba(0, 0, 0, 0.55);
+  opacity: 0.95;
+}
+.earth::after { /* a few soft cloud bands */
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background:
+    radial-gradient(60% 9% at 40% 62%, rgba(255, 255, 255, 0.28), transparent 70%),
+    radial-gradient(45% 7% at 30% 75%, rgba(255, 255, 255, 0.22), transparent 70%),
+    radial-gradient(35% 6% at 55% 50%, rgba(255, 255, 255, 0.16), transparent 70%);
+  mix-blend-mode: screen;
+}
+.masthead h1 { color: #fff; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.5); }
+.masthead .intro { color: var(--on-dark-2); }
+
+/* Tabs: the selected one is the same moon-dust colour as the panel it opens */
+.modes { border-bottom: 2px solid var(--sheet); }
+.modes button { color: var(--on-dark-2); }
+.modes button:hover { color: #fff; }
+.modes button[aria-selected="true"] { background: var(--sheet); color: var(--ink); }
+
+/* Panels float on the sky */
+.console { border: 0; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06); }
+.progress { border: 0; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); color: var(--ink); }
+
+/* Text that sits directly on the sky */
+.explain h2 { color: #fff; }
+.explain .steps div { border-top-color: var(--on-dark-rule); }
+.explain .steps h3 { color: #fff; }
+.explain .steps p, .explain .prose { color: var(--on-dark-2); }
+.explain a { color: var(--link-dark); }
+.explain table th { color: var(--on-dark-2); border-bottom-color: var(--on-dark); }
+.explain table td { color: var(--on-dark); border-bottom-color: var(--on-dark-rule); }
+.clips figcaption { color: var(--on-dark-2); }
+.clips video { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+
+/* Moon surface at the bottom of the page, with the lander parked on it */
+footer.ground {
+  max-width: none; margin: 40px 0 0; padding: 0;
+  color: var(--moon);
+}
+footer.ground .horizon { display: block; width: 100%; height: 90px; }
+footer.ground .landed {
+  position: absolute; width: 120px; height: 70px;
+  left: calc(47% - 60px); top: -18px;
+}
+footer.ground .ground-inner {
+  background: linear-gradient(var(--moon), var(--moon-2));
+  margin-top: -1px;
+  padding: 10px 24px 40px;
+}
+footer.ground .ground-inner p {
+  max-width: 1192px; margin: 0 auto; border: 0; padding: 0;
+  color: #30343c; font-size: 14px;
+}
+footer.ground a { color: #3e2fa3; }
+
+/* Start landing / Try again */
+.launch {
+  position: absolute; left: 50%; top: 64%;
+  transform: translate(-50%, -50%);
+  display: grid; justify-items: center; gap: 3px;
+  padding: 13px 30px 11px;
+  border: 0; border-radius: 14px;
+  background: var(--violet); color: #fff;
+  font: inherit; cursor: pointer;
+  box-shadow: 0 10px 34px rgba(106, 81, 221, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.launch[hidden] { display: none; }
+.launch:hover { background: #7a62ee; }
+.launch:active { transform: translate(-50%, -50%) scale(0.97); }
+.launch:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.launch-main { font-variation-settings: var(--wide); font-weight: 800; font-size: clamp(17px, 2.6vw, 25px); line-height: 1.1; }
+.launch-sub { font-size: 13px; opacity: 0.85; }
+.launch kbd { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.75); min-width: 20px; font-size: 12px; padding: 0 4px; }
+
+@media (max-width: 960px) {
+  .earth { width: 300px; height: 300px; right: -110px; top: -120px; opacity: 0.8; }
+}
+@media (max-width: 600px) {
+  .earth { width: 220px; height: 220px; right: -90px; top: -80px; opacity: 0.7; }
+  .masthead { padding-top: 40px; }
+  .launch { top: 66%; padding: 10px 22px 9px; }
+  .launch-sub { display: none; }
+  footer.ground .ground-inner { padding: 8px 16px 32px; }
+  footer.ground .landed { width: 90px; height: 52px; left: calc(47% - 45px); top: -10px; }
+}
+
+/* Light panels keep dark text */
+.console, .progress { color: var(--ink); }
+kbd { color: var(--ink); }
+.stamp { top: 30%; }
+.launch { top: 52%; }
+@media (max-width: 600px) { .launch { top: 54%; } .stamp { top: 27%; } }
+.launch-main { white-space: nowrap; }
+@media (max-width: 600px) {
+  .launch { top: 45%; padding: 8px 20px 7px; }
+  .stamp { top: 21%; padding: 6px 14px 7px; }
+  footer.ground .landed { top: -1px; }
+}
+.btn[hidden] { display: none; }
+
 </style>
 </head>
 <body>
+<canvas id="sky" aria-hidden="true"></canvas>
 
 <header class="masthead">
+  <div class="earth" aria-hidden="true"></div>
   <h1>Land the rocket.<br>Then teach a machine to.</h1>
   <p class="intro">Try the landing yourself, watch three trained AIs fly it, then train a brand-new AI right here in your browser and watch it go from crashing to landing.</p>
 </header>
@@ -467,6 +605,10 @@ a { color: var(--violet); text-underline-offset: 2px; }
         </div>
         <div class="stamp" id="stamp" hidden></div>
         <div class="toast" id="toast" hidden></div>
+        <button class="launch" id="launch" hidden>
+          <span class="launch-main" id="launch-label">Start landing</span>
+          <span class="launch-sub">or press <kbd>↑</kbd> / the Main engine button</span>
+        </button>
         <button class="sound-toggle" id="sound" aria-pressed="false" title="Sound">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="mute" d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <span id="sound-label">Sound off</span>
@@ -688,8 +830,22 @@ a { color: var(--violet); text-underline-offset: 2px; }
   </section>
 </main>
 
-<footer>
-  <p>Built with Gymnasium's LunarLander-v3, ported to the browser with planck.js. Trained with PPO in Stable-Baselines3 and a small JavaScript version of it. <a href="https://github.com/nkajave/lunar-lander">See the code on GitHub</a>.</p>
+<footer class="ground">
+  <svg class="horizon" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 70 L120 58 L210 66 L330 40 L460 52 L560 64 L640 64 L800 64 L880 48 L1010 60 L1130 36 L1250 54 L1360 46 L1440 56 L1440 120 L0 120 Z" fill="currentColor"/>
+  </svg>
+  <svg class="landed" viewBox="0 0 120 70" aria-hidden="true">
+    <line x1="8" y1="66" x2="8" y2="18" stroke="#f2f2f2" stroke-width="2"/>
+    <path d="M8 18 L8 28 L28 23 Z" fill="#e2d52b"/>
+    <line x1="98" y1="66" x2="98" y2="18" stroke="#f2f2f2" stroke-width="2"/>
+    <path d="M98 18 L98 28 L118 23 Z" fill="#e2d52b"/>
+    <path d="M46 34 L43 46 L43 52 L77 52 L77 46 L74 34 Z" fill="#8066e6" stroke="#4d4d80" stroke-width="1.5"/>
+    <circle cx="60" cy="42" r="3" fill="#cfc7ff"/>
+    <path d="M45 52 L38 66 M75 52 L82 66" stroke="#6fe0a8" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <div class="ground-inner">
+    <p>Built with Gymnasium's LunarLander-v3, ported to the browser with planck.js. Trained with PPO in Stable-Baselines3 and a small JavaScript version of it. <a href="https://github.com/nkajave/lunar-lander">See the code on GitHub</a>.</p>
+  </div>
 </footer>
 
 <script id="worker-src" type="text/plain">
@@ -2166,6 +2322,68 @@ onmessage = (e) => {
 
 </script>
 <script>
+/* The page background: a fixed starry sky that twinkles gently. Stays still if the
+ * viewer has asked for reduced motion. */
+(function () {
+  const canvas = document.getElementById("sky");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let stars = [], w = 0, h = 0, dpr = 1;
+
+  function build() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    const n = Math.round((w * h) / 2600);
+    stars = Array.from({ length: n }, () => {
+      const big = Math.random() < 0.06;
+      return {
+        x: Math.random() * w, y: Math.random() * h,
+        r: big ? 1.1 + Math.random() * 0.9 : 0.35 + Math.random() * 0.75,
+        a: 0.35 + Math.random() * 0.6,
+        tw: Math.random() < 0.35 ? 0.6 + Math.random() * 1.6 : 0, // twinkle speed
+        ph: Math.random() * Math.PI * 2,
+        tint: Math.random() < 0.12 ? "#cfd8ff" : Math.random() < 0.06 ? "#ffe9c8" : "#ffffff",
+      };
+    });
+    draw(0);
+  }
+
+  function draw(t) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    for (const s of stars) {
+      const a = s.tw ? s.a * (0.55 + 0.45 * Math.sin(t * 0.001 * s.tw + s.ph)) : s.a;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = s.tint;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+      if (s.r > 1.2) { // a soft glow on the brightest few
+        ctx.globalAlpha = a * 0.18;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  let last = 0;
+  function loop(t) {
+    if (t - last > 90) { draw(t); last = t; } // ~11 fps is plenty for a twinkle
+    requestAnimationFrame(loop);
+  }
+
+  let resizeTimer;
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(build, 150); });
+  build();
+  if (!still) requestAnimationFrame(loop);
+})();
+
+</script>
+<script>
 /* Wires the page together: modes, game loop, controls, AI pilots, training. */
 (function () {
   const $ = (s) => document.querySelector(s);
@@ -2261,16 +2479,29 @@ onmessage = (e) => {
     renderer.clear();
     const stamp = $("#stamp");
     if (state.waiting && state.mode === "play") {
-      stamp.className = "stamp ready";
-      stamp.innerHTML = "Ready<small>Fire an engine to start</small>";
-      stamp.hidden = false;
+      stamp.hidden = true;
+      showLaunch("Start landing");
     } else if (state.waiting) {
       stamp.className = "stamp ready";
       stamp.innerHTML = "Fly another lesson?<small>Fire an engine. Otherwise the AI flies in 3 seconds.</small>";
       stamp.hidden = false;
     } else stamp.hidden = true;
+    if (!(state.waiting && state.mode === "play")) $("#launch").hidden = true;
     sound.engines(0, 0);
   }
+
+  function showLaunch(label) {
+    $("#launch-label").textContent = label;
+    $("#launch").hidden = false;
+  }
+  function launch() {
+    if (state.mode !== "play") return;
+    if (state.done) newAttempt();
+    state.waiting = false;
+    $("#launch").hidden = true;
+    $("#stamp").hidden = true;
+  }
+  $("#launch").addEventListener("click", launch);
 
   let toastTimer = 0;
   function toast(text, ms = 2600) {
@@ -2332,6 +2563,7 @@ onmessage = (e) => {
     stamp.innerHTML = `${words[outcome]}<small>${outcome === "timeout" && !state.lost ? "Still hovering after 1,000 frames. " : ""}Score ${score > 0 ? "+" : ""}${score}</small>`;
     stamp.hidden = false;
     if (state.mode === "play" || state.mode === "watch") addTally(state.mode, outcome);
+    if (state.mode === "play") showLaunch(outcome === "landed" ? "Fly again" : "Try again");
     if (state.mode === "train" && state.human) addLesson(state.lesson, outcome);
     state.endAt = performance.now();
   }
@@ -2352,7 +2584,7 @@ onmessage = (e) => {
     state.last = now;
     const pressing = humanAction() !== 0;
     if (state.waiting && pressing) {
-      state.waiting = false; state.human = true; $("#stamp").hidden = true;
+      state.waiting = false; state.human = true; $("#stamp").hidden = true; $("#launch").hidden = true;
     } else if (state.waiting && state.mode === "train" && now - state.waitStart > 3000) {
       state.waiting = false; state.human = false; $("#stamp").hidden = true;
     }
@@ -2421,7 +2653,10 @@ onmessage = (e) => {
     if (state.mode === "watch") return;
     const tag = e.target.tagName;
     if (tag === "INPUT" || (e.target.closest && e.target.closest(".modes"))) return;
-    if (keyMap[e.code]) { state.keys[keyMap[e.code]] = true; e.preventDefault(); padLight(); }
+    if (keyMap[e.code]) {
+      state.keys[keyMap[e.code]] = true; e.preventDefault(); padLight();
+      if (state.mode === "play" && state.done && !e.repeat && performance.now() - state.endAt > 600) launch();
+    }
     if (state.mode === "play" && (e.code === "Space" || e.code === "Enter") && tag !== "BUTTON") { newAttempt(); e.preventDefault(); }
   });
   window.addEventListener("keyup", (e) => {
@@ -2434,7 +2669,7 @@ onmessage = (e) => {
   }
   $$(".thrust").forEach((b) => {
     const k = b.dataset.key;
-    const on = (e) => { e.preventDefault(); b.setPointerCapture && b.setPointerCapture(e.pointerId); state.keys[k] = true; padLight(); if (state.done && state.mode === "play") newAttempt(); };
+    const on = (e) => { e.preventDefault(); b.setPointerCapture && b.setPointerCapture(e.pointerId); state.keys[k] = true; padLight(); if (state.done && state.mode === "play") launch(); };
     const off = () => { state.keys[k] = false; padLight(); };
     b.addEventListener("pointerdown", on);
     b.addEventListener("pointerup", off);
