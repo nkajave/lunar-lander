@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lunar Lander: Land It, Then Teach an AI</title>
+<meta name="author" content="Namita Kajave">
 <meta name="description" content="Fly a rocket to the moon pad yourself, watch trained AIs do it, then train your own AI live in your browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Great+Vibes&display=swap" rel="stylesheet">
 <style>
 :root {
   --dust: #d5d7d9;
@@ -592,6 +593,32 @@ footer.ground .ground-inner p.credit {
 }
 footer.ground .ground-inner p.credit a { color: var(--ink); text-decoration-color: #3e2fa3; text-underline-offset: 3px; }
 
+/* Handwritten signature in the footer */
+footer.ground .ground-inner p.credit {
+  display: flex; align-items: baseline; gap: 12px;
+  font-variation-settings: normal; font-weight: 400; font-size: 15px; color: #3a3e48;
+  margin-bottom: 0;
+}
+footer.ground .sig-name {
+  font-family: "Great Vibes", cursive;
+  font-size: 40px; line-height: 1.1;
+  color: #1f2230; text-decoration: none;
+  display: inline-block; transform: rotate(-2deg);
+}
+footer.ground .sig-name:hover { color: #3e2fa3; }
+footer.ground .sig-line {
+  display: block; max-width: 1192px; margin: 0 auto 12px;
+  height: 0; position: relative;
+}
+footer.ground .sig-line::before {
+  content: ""; position: absolute; left: 0; top: 0;
+  width: 270px; height: 1.5px; background: #3a3e48;
+}
+@media (max-width: 600px) {
+  footer.ground .sig-name { font-size: 34px; }
+  footer.ground .sig-line::before { width: 230px; }
+}
+
 </style>
 </head>
 <body>
@@ -602,7 +629,6 @@ footer.ground .ground-inner p.credit a { color: var(--ink); text-decoration-colo
   <h1>Land the rocket.<br>Then teach a machine to.</h1>
   <div class="hero-side">
     <p class="intro">Try the landing yourself, watch three trained AIs fly it, then train a brand-new AI right here in your browser and watch it go from crashing to landing.</p>
-    <p class="byline">Built by <a href="https://github.com/nkajave">nkajave</a></p>
   </div>
 </header>
 
@@ -862,7 +888,8 @@ footer.ground .ground-inner p.credit a { color: var(--ink); text-decoration-colo
     <path d="M45 52 L38 66 M75 52 L82 66" stroke="#6fe0a8" stroke-width="3" stroke-linecap="round"/>
   </svg>
   <div class="ground-inner">
-    <p class="credit">Built by <a href="https://github.com/nkajave">nkajave</a></p>
+    <p class="credit"><span class="sig-by">Built by</span><a class="sig-name" href="https://github.com/nkajave">Namita Kajave</a></p>
+    <span class="sig-line" aria-hidden="true"></span>
     <p>Made with Gymnasium's LunarLander-v3, ported to the browser with planck.js. Trained with PPO in Stable-Baselines3 and a small JavaScript version of it. <a href="https://github.com/nkajave/lunar-lander">See the code on GitHub</a>.</p>
   </div>
 </footer>
