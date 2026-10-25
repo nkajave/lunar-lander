@@ -577,6 +577,21 @@ kbd { color: var(--ink); }
 }
 .btn[hidden] { display: none; }
 
+/* Author credit */
+.hero-side { display: grid; gap: 14px; }
+.byline {
+  margin: 0; display: inline-flex; align-items: center; gap: 8px;
+  font-size: 15px; color: var(--on-dark-2);
+}
+.byline::before { content: ""; width: 22px; height: 2px; background: var(--flag); display: inline-block; }
+.byline a { color: #fff; font-weight: 700; text-decoration: none; border-bottom: 2px solid var(--flag); padding-bottom: 1px; }
+.byline a:hover { color: var(--flag); }
+footer.ground .ground-inner p.credit {
+  font-variation-settings: var(--wide); font-weight: 800; font-size: 17px; color: var(--ink);
+  margin-bottom: 6px;
+}
+footer.ground .ground-inner p.credit a { color: var(--ink); text-decoration-color: #3e2fa3; text-underline-offset: 3px; }
+
 </style>
 </head>
 <body>
@@ -585,7 +600,10 @@ kbd { color: var(--ink); }
 <header class="masthead">
   <div class="earth" aria-hidden="true"></div>
   <h1>Land the rocket.<br>Then teach a machine to.</h1>
-  <p class="intro">Try the landing yourself, watch three trained AIs fly it, then train a brand-new AI right here in your browser and watch it go from crashing to landing.</p>
+  <div class="hero-side">
+    <p class="intro">Try the landing yourself, watch three trained AIs fly it, then train a brand-new AI right here in your browser and watch it go from crashing to landing.</p>
+    <p class="byline">Built by <a href="https://github.com/nkajave">nkajave</a></p>
+  </div>
 </header>
 
 <main>
@@ -844,7 +862,8 @@ kbd { color: var(--ink); }
     <path d="M45 52 L38 66 M75 52 L82 66" stroke="#6fe0a8" stroke-width="3" stroke-linecap="round"/>
   </svg>
   <div class="ground-inner">
-    <p>Built with Gymnasium's LunarLander-v3, ported to the browser with planck.js. Trained with PPO in Stable-Baselines3 and a small JavaScript version of it. <a href="https://github.com/nkajave/lunar-lander">See the code on GitHub</a>.</p>
+    <p class="credit">Built by <a href="https://github.com/nkajave">nkajave</a></p>
+    <p>Made with Gymnasium's LunarLander-v3, ported to the browser with planck.js. Trained with PPO in Stable-Baselines3 and a small JavaScript version of it. <a href="https://github.com/nkajave/lunar-lander">See the code on GitHub</a>.</p>
   </div>
 </footer>
 
@@ -2467,37 +2486,39 @@ onmessage = (e) => {
     probs: null, action: 0,
   };
 
-  // opts.human: you fly this one. opts.offer: wait a moment so you can grab the controls.
+  // opts.human: you fly this one now. opts.go: start straight away instead of waiting for the button.
   function newAttempt(opts = {}) {
     state.env = new LunarLander();
     state.obs = state.env.reset();
     state.done = false; state.outcome = null; state.score = 0;
     state.human = state.mode === "play" || !!opts.human;
-    state.waiting = state.mode === "play" || !!opts.offer;
-    state.waitStart = performance.now();
+    state.waiting = !opts.human && !opts.go;
     state.lesson = [];
+    state.probs = null;
     renderer.clear();
-    const stamp = $("#stamp");
-    if (state.waiting && state.mode === "play") {
-      stamp.hidden = true;
-      showLaunch("Start landing");
-    } else if (state.waiting) {
-      stamp.className = "stamp ready";
-      stamp.innerHTML = "Fly another lesson?<small>Fire an engine. Otherwise the AI flies in 3 seconds.</small>";
-      stamp.hidden = false;
-    } else stamp.hidden = true;
-    if (!(state.waiting && state.mode === "play")) $("#launch").hidden = true;
+    $("#stamp").hidden = true;
+    if (state.waiting) showLaunch("start"); else $("#launch").hidden = true;
     sound.engines(0, 0);
   }
 
-  function showLaunch(label) {
-    $("#launch-label").textContent = label;
+  const LAUNCH = {
+    play: { start: "Start landing", again: (o) => (o === "landed" ? "Fly again" : "Try again"),
+            sub: 'or press <kbd>↑</kbd> / the Main engine button' },
+    watch: { start: "Start landing", again: () => "Watch again", sub: "The AI pilot takes the controls" },
+    train: { start: "Watch your AI land", again: () => "Watch again",
+             sub: 'or fire an engine to fly a lesson yourself' },
+  };
+  // which: "start" before an attempt, or the outcome after one
+  function showLaunch(which) {
+    const L = LAUNCH[state.mode];
+    $("#launch-label").textContent = which === "start" ? L.start : L.again(which);
+    $(".launch-sub").innerHTML = L.sub;
     $("#launch").hidden = false;
   }
   function launch() {
-    if (state.mode !== "play") return;
     if (state.done) newAttempt();
     state.waiting = false;
+    state.human = state.mode === "play";
     $("#launch").hidden = true;
     $("#stamp").hidden = true;
   }
@@ -2563,7 +2584,7 @@ onmessage = (e) => {
     stamp.innerHTML = `${words[outcome]}<small>${outcome === "timeout" && !state.lost ? "Still hovering after 1,000 frames. " : ""}Score ${score > 0 ? "+" : ""}${score}</small>`;
     stamp.hidden = false;
     if (state.mode === "play" || state.mode === "watch") addTally(state.mode, outcome);
-    if (state.mode === "play") showLaunch(outcome === "landed" ? "Fly again" : "Try again");
+    showLaunch(outcome);
     if (state.mode === "train" && state.human) addLesson(state.lesson, outcome);
     state.endAt = performance.now();
   }
@@ -2583,10 +2604,8 @@ onmessage = (e) => {
     const dt = Math.min(now - state.last, 100);
     state.last = now;
     const pressing = humanAction() !== 0;
-    if (state.waiting && pressing) {
-      state.waiting = false; state.human = true; $("#stamp").hidden = true; $("#launch").hidden = true;
-    } else if (state.waiting && state.mode === "train" && now - state.waitStart > 3000) {
-      state.waiting = false; state.human = false; $("#stamp").hidden = true;
+    if (state.waiting && pressing && state.mode !== "watch") {
+      state.waiting = false; state.human = true; state.lesson = []; $("#stamp").hidden = true; $("#launch").hidden = true;
     }
     // Training: grab the controls mid-flight, or start a lesson right after an attempt ends.
     if (state.mode === "train" && pressing && !state.waiting) {
@@ -2602,8 +2621,6 @@ onmessage = (e) => {
     } else {
       renderer.tick(null);
       state.acc = 0;
-      const wait = state.mode === "play" ? Infinity : 1600;
-      if (now - state.endAt > wait) newAttempt({ offer: state.mode === "train" && state.human });
     }
     renderer.draw(state.env, { hideLander: state.done && state.outcome === "crashed" });
     showSensors(state.obs);
@@ -2690,7 +2707,7 @@ onmessage = (e) => {
     $$("#speed button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
     state.speed = Number(b.dataset.speed);
   }));
-  $("#watch-new").addEventListener("click", newAttempt);
+  $("#watch-new").addEventListener("click", () => newAttempt({ go: true }));
 
   // ---------- Sound ----------
   $("#sound").addEventListener("click", async () => {
@@ -2829,7 +2846,7 @@ onmessage = (e) => {
     if (m.type === "cloned") {
       train.copying = false;
       train.brain = MLP.fromFlat(m.weights);
-      if (state.mode === "train") { state.brain = train.brain; if (!state.human) newAttempt(); }
+      if (state.mode === "train") { state.brain = train.brain; if (!state.human || state.done) newAttempt({ go: true }); }
       const agree = Math.round(m.agreement * 100), landed = Math.round(m.stats.testLanded * 10);
       setStatus("copy", "It copied you",
         `It picks the same engine as you ${agree}% of the time, and landed ${landed} of 10 test flights before any practice. ` +
