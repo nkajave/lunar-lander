@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunar Lander: Land It, Then Teach an AI</title>
+<meta name="description" content="Fly a rocket to the moon pad yourself, watch trained AIs do it, then train your own AI live in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <h1>Land the rocket.<br>Then teach a machine to.</h1>
+  <p class="intro">Try the landing yourself, watch three trained AIs fly it, then train a brand-new AI right here in your browser and watch it go from crashing to landing.</p>
+</header>
+
+<main>
+  <nav class="modes" role="tablist" aria-label="Mode">
+    <button role="tab" id="tab-play" aria-selected="true" data-mode="play">Fly it yourself</button>
+    <button role="tab" id="tab-watch" aria-selected="false" data-mode="watch">Watch a trained AI</button>
+    <button role="tab" id="tab-train" aria-selected="false" data-mode="train">Train your own AI</button>
+  </nav>
+
+  <section class="console">
+    <div class="viewport">
+      <div class="screen">
+        <canvas id="game" width="600" height="400" aria-label="Lunar Lander game"></canvas>
+        <div class="hud">
+          <span id="hud-left"></span>
+          <span id="hud-right"></span>
+        </div>
+        <div class="stamp" id="stamp" hidden></div>
+        <button class="sound-toggle" id="sound" aria-pressed="false" title="Sound">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="mute" d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span id="sound-label">Sound off</span>
+        </button>
+      </div>
+
+      <div class="pad" id="pad">
+        <button class="thrust" data-key="left" aria-label="Fire left engine (pushes left)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Left</span>
+        </button>
+        <button class="thrust main" data-key="up" aria-label="Fire main engine (pushes up)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Main engine</span>
+        </button>
+        <button class="thrust" data-key="right" aria-label="Fire right engine (pushes right)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Right</span>
+        </button>
+      </div>
+
+      <div class="instruments" aria-label="What the AI sees">
+        <div class="inst-head">
+          <h2>What the AI sees</h2>
+          <p>The AI never sees the picture. Every frame it gets these eight numbers, nothing else.</p>
+        </div>
+        <div class="gauges" id="gauges"></div>
+        <div class="choice" id="choice">
+          <h3>What the AI wants to do</h3>
+          <div class="bars" id="bars"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <!-- Fly it yourself -->
+      <div class="pane" id="pane-play">
+        <h2>Your turn</h2>
+        <p>Set the rocket down gently between the yellow flags. Land too hard or tilted and it breaks.</p>
+        <dl class="keys">
+          <div><dt><kbd>↑</kbd> or <kbd>W</kbd></dt><dd>Main engine</dd></div>
+          <div><dt><kbd>←</kbd> or <kbd>A</kbd></dt><dd>Push left</dd></div>
+          <div><dt><kbd>→</kbd> or <kbd>D</kbd></dt><dd>Push right</dd></div>
+          <div><dt><kbd>Space</kbd></dt><dd>New attempt</dd></div>
+        </dl>
+        <p class="hint">On a phone, hold the buttons under the game.</p>
+        <button class="btn primary" id="play-new">New attempt</button>
+        <div class="tally" id="play-tally"></div>
+        <p class="fine">Scoring is the same one the AI uses: points for getting closer, slower and level, +100 for resting on the ground, -100 for a crash, and a little fuel cost for every burn. 200 or more is a solid landing.</p>
+      </div>
+
+      <!-- Watch a trained AI -->
+      <div class="pane" id="pane-watch" hidden>
+        <h2>Pick a pilot</h2>
+        <p>These three AIs were trained in Python for a million frames each. They only differ in what they were rewarded for.</p>
+        <div class="choices" role="radiogroup" aria-label="Trained AI">
+          <label class="option">
+            <input type="radio" name="pilot" value="default" checked>
+            <span class="opt-body">
+              <strong>The game's own score</strong>
+              <span>Lands smoothly almost every time.</span>
+            </span>
+          </label>
+          <label class="option">
+            <input type="radio" name="pilot" value="hover">
+            <span class="opt-body">
+              <strong>+1 for every steady frame</strong>
+              <span>Learned to cheat: it hovers to farm points and rarely lands.</span>
+            </span>
+          </label>
+          <label class="option">
+            <input type="radio" name="pilot" value="fixed">
+            <span class="opt-body">
+              <strong>Paid for getting steady</strong>
+              <span>The fix. Lands every time, and faster than the original.</span>
+            </span>
+          </label>
+        </div>
+        <div class="row">
+          <span class="label">Speed</span>
+          <div class="seg" id="speed" role="radiogroup" aria-label="Speed">
+            <button data-speed="1" aria-pressed="true">1×</button>
+            <button data-speed="2" aria-pressed="false">2×</button>
+            <button data-speed="4" aria-pressed="false">4×</button>
+          </div>
+        </div>
+        <button class="btn" id="watch-new">New attempt</button>
+        <div class="tally" id="watch-tally"></div>
+      </div>
+
+      <!-- Train your own AI -->
+      <div class="pane" id="pane-train" hidden>
+        <h2>Train a brand-new AI</h2>
+        <p>It starts knowing nothing and learns only from points. Choose what to reward, then press start.</p>
+        <div class="choices" role="radiogroup" aria-label="Reward" id="reward-choices">
+          <label class="option">
+            <input type="radio" name="reward" value="none" checked>
+            <span class="opt-body">
+              <strong>The game's own score</strong>
+              <span>Should learn to land.</span>
+            </span>
+          </label>
+          <label class="option">
+            <input type="radio" name="reward" value="stay">
+            <span class="opt-body">
+              <strong>Add +1 for every steady frame</strong>
+              <span>Watch it discover that hovering pays more than landing.</span>
+            </span>
+          </label>
+          <label class="option">
+            <input type="radio" name="reward" value="change">
+            <span class="opt-body">
+              <strong>Pay for getting steady</strong>
+              <span>A one-time bonus plus a small charge per frame. Nothing to farm.</span>
+            </span>
+          </label>
+        </div>
+        <details class="tune" id="tune">
+          <summary>Adjust the rule</summary>
+          <label class="slider">
+            <span>Steady bonus <output id="bonus-out">1.0</output></span>
+            <input type="range" id="bonus" min="0" max="3" step="0.1" value="1">
+          </label>
+          <label class="slider">
+            <span>Charge per frame <output id="fee-out">0.00</output></span>
+            <input type="range" id="fee" min="0" max="0.3" step="0.01" value="0">
+          </label>
+        </details>
+        <div class="actions">
+          <button class="btn primary" id="train-start">Start training</button>
+          <button class="btn" id="train-reset" disabled>Start over</button>
+        </div>
+        <dl class="stats" id="stats">
+          <div><dt>Frames practiced</dt><dd id="st-steps">0</dd></div>
+          <div><dt>Test score</dt><dd id="st-score">–</dd></div>
+          <div><dt>Test landings</dt><dd id="st-landed">–</dd></div>
+          <div><dt>Test flight length</dt><dd id="st-len">–</dd></div>
+        </dl>
+        <p class="fine" id="train-note">The first few minutes are mostly crashes. With the game's own score, test flights usually start landing after about 400k frames, roughly 5 to 10 minutes depending on your computer. Keep this tab open while it learns.</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="progress" id="progress" hidden>
+    <div class="progress-head">
+      <h2>Learning curve</h2>
+      <p class="legend">
+        <span class="key key-game"></span>Test flights, game score
+        <span class="key key-shaped"></span>Practice, score the AI is chasing
+      </p>
+    </div>
+    <canvas id="chart" height="240" aria-label="Average score over training"></canvas>
+    <p class="caption" id="chart-caption">Test flights use the AI's best move every frame and the game's own score, with no bonus. Above the green line counts as solved. Practice flights include some random moves so it can explore, and count your bonus.</p>
+  </section>
+
+  <section class="explain">
+    <h2>How the AI learns</h2>
+    <div class="steps">
+      <div>
+        <h3>It sees eight numbers</h3>
+        <p>Position, speed, tilt, spin and whether each leg touches the ground. That's the panel under the game.</p>
+      </div>
+      <div>
+        <h3>It picks one of four moves</h3>
+        <p>Do nothing, fire the left engine, the main engine, or the right engine. Fifty times a second.</p>
+      </div>
+      <div>
+        <h3>It chases points</h3>
+        <p>A small neural network tries moves, sees which ones earned more points, and nudges itself toward them. The method is PPO, the same one in the Python code.</p>
+      </div>
+    </div>
+
+    <h2>Why one of them cheats</h2>
+    <p class="prose">An attempt ends after 1,000 frames. Pay +1 for every steady frame and a rocket hanging in the air can collect up to 1,000 points, while landing ends the game and stops the payments. So hovering beats landing, and the AI finds that out. It learns exactly what it's paid for, not what you meant. The fix pays only for <em>becoming</em> steady, so the bonus adds up to at most 1 per attempt and there's nothing left to farm.</p>
+
+    <h2>Full results from Python</h2>
+    <p class="prose">One million frames of training each, scored over 20 attempts on the plain game.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Rewarded for</th><th scope="col">Avg. score</th><th scope="col">Avg. frames</th><th scope="col">Landed</th></tr></thead>
+        <tbody>
+          <tr><td>The game's own score</td><td>235</td><td>464</td><td>20 / 20</td></tr>
+          <tr><td>+1 for every steady frame</td><td>66</td><td>950</td><td>3 / 20</td></tr>
+          <tr><td>Paid for getting steady</td><td>260</td><td>346</td><td>20 / 20</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="clips">
+      <figure><video src="videos/landing.mp4" controls playsinline preload="metadata"></video><figcaption>Game's own score</figcaption></figure>
+      <figure><video src="videos/hover.mp4" controls playsinline preload="metadata"></video><figcaption>+1 per steady frame</figcaption></figure>
+      <figure><video src="videos/fixed.mp4" controls playsinline preload="metadata"></video><figcaption>Paid for getting steady</figcaption></figure>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Built with Gymnasium's LunarLander-v3, ported to the browser with planck.js. Trained with PPO in Stable-Baselines3 and a small JavaScript version of it. <a href="https://github.com/nkajave/lunar-lander">See the code on GitHub</a>.</p>
+</footer>
+
+<script src="lib/planck.min.js"></script>
+<script src="js/lander.js"></script>
+<script src="js/nn.js"></script>
+<script src="js/render.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
