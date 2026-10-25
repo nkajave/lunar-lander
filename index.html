@@ -385,6 +385,62 @@ a { color: var(--violet); text-underline-offset: 2px; }
   .bar .fill { transition: none; }
 }
 
+/* ---------- Training: steps, status, lessons, toast ---------- */
+.status {
+  display: grid; gap: 2px;
+  padding: 12px 14px;
+  margin: 0 0 18px;
+  border-left: 4px solid var(--ink-3);
+  background: var(--dust);
+  border-radius: 0 8px 8px 0;
+}
+.status strong { font-variation-settings: var(--wide); font-weight: 800; font-size: 16px; }
+.status span { color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.status[data-stage="copy"], .status[data-stage="first"] { border-left-color: var(--violet); }
+.status[data-stage="most"], .status[data-stage="solved"] { border-left-color: var(--green); }
+.status[data-stage="loophole"] { border-left-color: var(--flag); background: #ece6a8; }
+.status[data-stage="crash"] { border-left-color: var(--red); }
+
+.steps-list { list-style: none; margin: 0; padding: 0; counter-reset: step; display: grid; gap: 22px; }
+.steps-list > li { counter-increment: step; position: relative; padding-left: 34px; }
+.steps-list > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 0;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--ink); color: var(--sheet);
+  font-weight: 750; font-size: 13px; line-height: 24px; text-align: center;
+}
+.steps-list h3 { margin: 1px 0 6px; font-size: 16px; font-weight: 750; }
+.steps-list h3 .opt { font-weight: 500; font-size: 13px; color: var(--ink-3); margin-left: 4px; }
+.steps-list p { margin: 0 0 10px; color: var(--ink-2); font-size: 14px; }
+.steps-list kbd { min-width: 22px; padding: 0 4px; font-size: 12px; }
+.steps-list .actions { margin-top: 10px; }
+.steps-list .actions .btn { white-space: nowrap; padding: 0 12px; }
+.steps-list .stats { margin-top: 16px; }
+.lessons { display: flex; flex-wrap: wrap; gap: 4px; min-height: 18px; }
+.lessons i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; background: var(--rule); }
+.lessons i.landed { background: var(--green); }
+.lessons i.crashed { background: var(--red); }
+.lessons i.timeout { background: var(--flag); }
+.lessons .t-sum { width: 100%; font-size: 13.5px; color: var(--ink-2); margin-top: 2px; }
+.btn.quiet { border-color: transparent; color: var(--ink-2); flex: 0 0 auto; padding: 0 8px; }
+.btn.quiet:hover { color: var(--ink); background: transparent; text-decoration: underline; }
+
+.toast {
+  position: absolute; left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #fff; color: var(--ink);
+  font-weight: 750; font-size: 15px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  pointer-events: none; white-space: nowrap;
+  animation: toast-in 240ms ease-out;
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } }
+.hud .you { color: #6fe0a8; }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+
 </style>
 </head>
 <body>
@@ -410,6 +466,7 @@ a { color: var(--violet); text-underline-offset: 2px; }
           <span id="hud-right"></span>
         </div>
         <div class="stamp" id="stamp" hidden></div>
+        <div class="toast" id="toast" hidden></div>
         <button class="sound-toggle" id="sound" aria-pressed="false" title="Sound">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="mute" d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <span id="sound-label">Sound off</span>
@@ -503,52 +560,75 @@ a { color: var(--violet); text-underline-offset: 2px; }
       <!-- Train your own AI -->
       <div class="pane" id="pane-train" hidden>
         <h2>Train a brand-new AI</h2>
-        <p>It starts knowing nothing and learns only from points. Choose what to reward, then press start.</p>
-        <div class="choices" role="radiogroup" aria-label="Reward" id="reward-choices">
-          <label class="option">
-            <input type="radio" name="reward" value="none" checked>
-            <span class="opt-body">
-              <strong>The game's own score</strong>
-              <span>Should learn to land.</span>
-            </span>
-          </label>
-          <label class="option">
-            <input type="radio" name="reward" value="stay">
-            <span class="opt-body">
-              <strong>Add +1 for every steady frame</strong>
-              <span>Watch it discover that hovering pays more than landing.</span>
-            </span>
-          </label>
-          <label class="option">
-            <input type="radio" name="reward" value="change">
-            <span class="opt-body">
-              <strong>Pay for getting steady</strong>
-              <span>A one-time bonus plus a small charge per frame. Nothing to farm.</span>
-            </span>
-          </label>
+        <p>It starts knowing nothing. Show it how by flying yourself, let it practice on its own, or both.</p>
+
+        <div class="status" id="train-status" role="status" aria-live="polite">
+          <strong id="status-head">Not trained yet</strong>
+          <span id="status-body">Right now it presses engines at random, so it crashes within a second or two. That's normal.</span>
         </div>
-        <details class="tune" id="tune">
-          <summary>Adjust the rule</summary>
-          <label class="slider">
-            <span>Steady bonus <output id="bonus-out">1.0</output></span>
-            <input type="range" id="bonus" min="0" max="3" step="0.1" value="1">
-          </label>
-          <label class="slider">
-            <span>Charge per frame <output id="fee-out">0.00</output></span>
-            <input type="range" id="fee" min="0" max="0.3" step="0.01" value="0">
-          </label>
-        </details>
-        <div class="actions">
-          <button class="btn primary" id="train-start">Start training</button>
-          <button class="btn" id="train-reset" disabled>Start over</button>
-        </div>
-        <dl class="stats" id="stats">
-          <div><dt>Frames practiced</dt><dd id="st-steps">0</dd></div>
-          <div><dt>Test score</dt><dd id="st-score">–</dd></div>
-          <div><dt>Test landings</dt><dd id="st-landed">–</dd></div>
-          <div><dt>Test flight length</dt><dd id="st-len">–</dd></div>
-        </dl>
-        <p class="fine" id="train-note">The first few minutes are mostly crashes. With the game's own score, test flights usually start landing after about 400k frames, roughly 5 to 10 minutes depending on your computer. Keep this tab open while it learns.</p>
+
+        <ol class="steps-list">
+          <li>
+            <h3>Show it how <span class="opt">optional</span></h3>
+            <p>Grab the controls any time: <kbd>↑</kbd> <kbd>←</kbd> <kbd>→</kbd>, or hold the buttons under the game. Every flight you finish becomes a lesson, crashes included.</p>
+            <div class="lessons" id="lessons"><span class="t-sum">No lessons yet</span></div>
+            <div class="actions">
+              <button class="btn" id="copy-btn" disabled>Copy my flying</button>
+              <button class="btn quiet" id="lessons-clear" hidden>Clear lessons</button>
+            </div>
+          </li>
+          <li>
+            <h3>Choose what to reward</h3>
+            <div class="choices" role="radiogroup" aria-label="Reward" id="reward-choices">
+              <label class="option">
+                <input type="radio" name="reward" value="none" checked>
+                <span class="opt-body">
+                  <strong>The game's own score</strong>
+                  <span>Should learn to land.</span>
+                </span>
+              </label>
+              <label class="option">
+                <input type="radio" name="reward" value="stay">
+                <span class="opt-body">
+                  <strong>Add +1 for every steady frame</strong>
+                  <span>Watch it discover that hovering pays more than landing.</span>
+                </span>
+              </label>
+              <label class="option">
+                <input type="radio" name="reward" value="change">
+                <span class="opt-body">
+                  <strong>Pay for getting steady</strong>
+                  <span>A one-time bonus plus a small charge per frame. Nothing to farm.</span>
+                </span>
+              </label>
+            </div>
+            <details class="tune" id="tune">
+              <summary>Adjust the rule</summary>
+              <label class="slider">
+                <span>Steady bonus <output id="bonus-out">1.0</output></span>
+                <input type="range" id="bonus" min="0" max="3" step="0.1" value="1">
+              </label>
+              <label class="slider">
+                <span>Charge per frame <output id="fee-out">0.00</output></span>
+                <input type="range" id="fee" min="0" max="0.3" step="0.01" value="0">
+              </label>
+            </details>
+          </li>
+          <li>
+            <h3>Let it practice</h3>
+            <div class="actions">
+              <button class="btn primary" id="train-start">Start practice</button>
+              <button class="btn" id="train-reset" disabled>Start over</button>
+            </div>
+            <dl class="stats" id="stats">
+              <div><dt>Frames practiced</dt><dd id="st-steps">0</dd></div>
+              <div><dt>Test score</dt><dd id="st-score">–</dd></div>
+              <div><dt>Test landings</dt><dd id="st-landed">–</dd></div>
+              <div><dt>Test flight length</dt><dd id="st-len">–</dd></div>
+            </dl>
+            <p class="fine" id="train-note">On its own it usually lands after 5 to 10 minutes. Keep this page open and the screen on: phones pause pages in the background.</p>
+          </li>
+        </ol>
       </div>
     </aside>
   </section>
@@ -584,6 +664,9 @@ a { color: var(--violet); text-underline-offset: 2px; }
 
     <h2>Why one of them cheats</h2>
     <p class="prose">An attempt ends after 1,000 frames. Pay +1 for every steady frame and a rocket hanging in the air can collect up to 1,000 points, while landing ends the game and stops the payments. So hovering beats landing, and the AI finds that out. It learns exactly what it's paid for, not what you meant. The fix pays only for <em>becoming</em> steady, so the bonus adds up to at most 1 per attempt and there's nothing left to farm.</p>
+
+    <h2>Teaching it yourself</h2>
+    <p class="prose">When you press <em>Copy my flying</em>, the AI studies every moment of your lessons and learns to press the engine you pressed in that situation. This is called imitation learning. Then it practices for points as usual, with a reminder of your moves that fades over time. In our tests, copying an average pilot (one landing in five) gave it a head start in the first few minutes, and practice alone caught up after about 400,000 frames. A better teacher gives a better start: copying a skilled pilot, it landed every test flight before any practice at all.</p>
 
     <h2>Full results from Python</h2>
     <p class="prose">One million frames of training each, scored over 20 attempts on the plain game.</p>
@@ -1011,7 +1094,7 @@ a { color: var(--violet); text-underline-offset: 2px; }
 (function (root) {
   const isNode = typeof module !== "undefined" && module.exports;
   const LunarLander = isNode ? require("./lander.js") : root.LunarLander;
-  const { MLP, softmax } = isNode ? require("./nn.js") : root.NN;
+  const { MLP, softmax, argmax: argmaxOf } = isNode ? require("./nn.js") : root.NN;
 
   // Reward rules layered on top of the game's own reward.
   // mode: "none" | "stay" (pay every frame you're steady: hackable) | "change" (pay for becoming steady)
@@ -1072,6 +1155,55 @@ a { color: var(--violet); text-underline-offset: 2px; }
       Object.assign(this.o.reward, cfg);
     }
 
+    // Learn from someone's flying: teach the policy to pick the same move in the
+    // same situation (behavior cloning). samples: [{obs: [8 numbers], action: 0-3}]
+    clone(samples, epochs = 30, smooth = 0.1) {
+      const net = new MLP([8, 64, 64, 4], 0.01, this.rand);
+      const B = 64, lr = 1e-3, n = samples.length;
+      const idx = Array.from({ length: n }, (_, i) => i);
+      let loss = 0;
+      for (let ep = 0; ep < epochs; ep++) {
+        for (let i = n - 1; i > 0; i--) { const j = Math.floor(this.rand() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+        loss = 0;
+        for (let s = 0; s < n; s += B) {
+          const mb = idx.slice(s, s + B);
+          net.zeroGrad();
+          for (const k of mb) {
+            const acts = net.forward(samples[k].obs);
+            const p = softmax(acts[acts.length - 1]);
+            const g = new Float64Array(4);
+            for (let j = 0; j < 4; j++) {
+              // target: mostly the human's move, a little spread so it can still explore
+              const t = (j === samples[k].action ? 1 - smooth : 0) + smooth / 4;
+              g[j] = (p[j] - t) / mb.length;
+              loss -= t * Math.log(p[j] + 1e-12);
+            }
+            net.backward(acts, g);
+          }
+          const norm = net.gradNorm();
+          net.adam(lr, norm > 1 ? 1 / norm : 1);
+        }
+      }
+      this.pi = net;
+      this.warmup = this.o.warmup ?? 3; // first rounds only tune the value net, so practice doesn't wreck the copy
+      // Keep reminding it of the teacher's moves for a while, fading out, so practice
+      // builds on the copy instead of overwriting it.
+      this.demos = samples;
+      this.bcStart = this.totalSteps;
+      // agreement: how often the copy picks the same move as the teacher
+      let same = 0;
+      for (const s of samples) if (argmaxOf(net.out(s.obs)) === s.action) same++;
+      return { agreement: same / (n || 1), loss: loss / (n || 1) };
+    }
+
+    // A lesson flown while it's already practicing: add it to the reminders.
+    addDemos(samples) {
+      this.demos = (this.demos || []).concat(samples);
+      this.bcStart = this.totalSteps;
+      this.o.bc = Math.min(this.o.bc ?? 1, 0.5);
+      this.o.bcSteps = 150000;
+    }
+
     sample(probs) {
       const u = this.rand();
       let c = 0;
@@ -1125,14 +1257,20 @@ a { color: var(--violet); text-underline-offset: 2px; }
         }
       }
 
-      this.update(obsBuf, act, logp, adv, ret, N);
+      const valueOnly = this.warmup > 0;
+      if (valueOnly) this.warmup--;
+      this.update(obsBuf, act, logp, adv, ret, N, valueOnly);
       this.test(4);
       return this.stats();
     }
 
-    update(obsBuf, act, logpOld, adv, ret, N) {
+    update(obsBuf, act, logpOld, adv, ret, N, valueOnly = false) {
       const { batch, epochs, clip, ent, vf, lr, maxGrad } = this.o;
       const idx = Array.from({ length: N }, (_, i) => i);
+      const bcCoef = this.demos && this.demos.length
+        ? (this.o.bc ?? 1) * Math.max(0, 1 - (this.totalSteps - this.bcStart) / (this.o.bcSteps ?? 400000))
+        : 0;
+      this.bcCoef = bcCoef;
       for (let ep = 0; ep < epochs; ep++) {
         for (let i = N - 1; i > 0; i--) { const j = Math.floor(this.rand() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
         for (let s = 0; s + batch <= N; s += batch) {
@@ -1157,14 +1295,23 @@ a { color: var(--violet); text-underline-offset: 2px; }
             for (let j = 0; j < 4; j++) {
               g[j] = (dLdlp * ((j === act[k] ? 1 : 0) - p[j]) + ent * p[j] * (Math.log(p[j] + 1e-12) + H)) / batch;
             }
-            this.pi.backward(pa, g);
+            if (!valueOnly) this.pi.backward(pa, g);
+            if (!valueOnly && bcCoef > 0) {
+              // Reminder of the teacher: one of their (situation, move) pairs.
+              const d = this.demos[Math.floor(this.rand() * this.demos.length)];
+              const da = this.pi.forward(d.obs), dp = softmax(da[da.length - 1]);
+              const dg = new Float64Array(4);
+              for (let j = 0; j < 4; j++) dg[j] = (bcCoef * (dp[j] - (j === d.action ? 1 : 0))) / batch;
+              this.pi.backward(da, dg);
+            }
             const va = this.vf.forward(obsBuf[k]);
             const v = va[va.length - 1][0];
             this.vf.backward(va, [(vf * 2 * (v - ret[k])) / batch]);
           }
           const norm = Math.hypot(this.pi.gradNorm(), this.vf.gradNorm());
           const scale = norm > maxGrad ? maxGrad / norm : 1;
-          this.pi.adam(lr, scale); this.vf.adam(lr, scale);
+          if (!valueOnly) this.pi.adam(lr, scale);
+          this.vf.adam(lr, scale);
         }
       }
     }
@@ -1211,21 +1358,37 @@ a { color: var(--violet); text-underline-offset: 2px; }
   else root.PPOLib = api;
 })(typeof self !== "undefined" ? self : globalThis);
 
-/* Runs PPO training in the background so the page stays smooth. */
+/* Runs training in the background so the page stays smooth.
+ * Messages in:  clone {demos, reward, seed} | lessons {demos} | start {reward, seed} | pause
+ * Messages out: cloned {agreement, stats, weights} | progress {stats, weights}
+ */
 
 let ppo = null, running = false;
+
+function ensure(m) {
+  if (!ppo) ppo = new self.PPOLib.PPO({ reward: m.reward, seed: m.seed });
+  else if (m.reward) ppo.setReward(m.reward);
+}
 
 function loop() {
   if (!running) return;
   const stats = ppo.iterate();
-  postMessage({ type: "progress", stats, weights: ppo.pi.toJSON() });
-  setTimeout(loop, 0); // let pause messages through between rounds
+  postMessage({ type: "progress", stats, weights: ppo.pi.toJSON(), reminder: ppo.bcCoef || 0 });
+  setTimeout(loop, 0); // let other messages through between rounds
 }
 
 onmessage = (e) => {
   const m = e.data;
-  if (m.type === "start") {
-    if (!ppo) ppo = new self.PPOLib.PPO({ reward: m.reward, seed: m.seed });
+  if (m.type === "clone") {
+    ensure(m);
+    const c = ppo.clone(m.demos);
+    ppo.tests = [];
+    ppo.test(10);
+    postMessage({ type: "cloned", agreement: c.agreement, stats: ppo.stats(), weights: ppo.pi.toJSON() });
+  } else if (m.type === "lessons") {
+    if (ppo) ppo.addDemos(m.demos);
+  } else if (m.type === "start") {
+    ensure(m);
     if (!running) { running = true; loop(); }
   } else if (m.type === "pause") {
     running = false;
@@ -2086,19 +2249,37 @@ onmessage = (e) => {
     probs: null, action: 0,
   };
 
-  function newAttempt() {
+  // opts.human: you fly this one. opts.offer: wait a moment so you can grab the controls.
+  function newAttempt(opts = {}) {
     state.env = new LunarLander();
     state.obs = state.env.reset();
     state.done = false; state.outcome = null; state.score = 0;
-    state.waiting = state.mode === "play";
+    state.human = state.mode === "play" || !!opts.human;
+    state.waiting = state.mode === "play" || !!opts.offer;
+    state.waitStart = performance.now();
+    state.lesson = [];
     renderer.clear();
     const stamp = $("#stamp");
-    if (state.waiting) {
+    if (state.waiting && state.mode === "play") {
       stamp.className = "stamp ready";
       stamp.innerHTML = "Ready<small>Fire an engine to start</small>";
       stamp.hidden = false;
+    } else if (state.waiting) {
+      stamp.className = "stamp ready";
+      stamp.innerHTML = "Fly another lesson?<small>Fire an engine. Otherwise the AI flies in 3 seconds.</small>";
+      stamp.hidden = false;
     } else stamp.hidden = true;
     sound.engines(0, 0);
+  }
+
+  let toastTimer = 0;
+  function toast(text, ms = 2600) {
+    const t = $("#toast");
+    t.textContent = text;
+    t.hidden = false;
+    t.style.animation = "none"; void t.offsetWidth; t.style.animation = "";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (t.hidden = true), ms);
   }
 
   function humanAction() {
@@ -2120,7 +2301,9 @@ onmessage = (e) => {
   }
 
   function stepOnce() {
-    const a = state.mode === "play" ? humanAction() : aiAction();
+    const a = state.human ? humanAction() : aiAction();
+    if (state.human) state.probs = null;
+    if (state.human && state.mode === "train") state.lesson.push({ obs: state.obs.slice(), action: a });
     state.action = a;
     const r = state.env.step(a);
     state.obs = r.obs;
@@ -2149,6 +2332,7 @@ onmessage = (e) => {
     stamp.innerHTML = `${words[outcome]}<small>${outcome === "timeout" && !state.lost ? "Still hovering after 1,000 frames. " : ""}Score ${score > 0 ? "+" : ""}${score}</small>`;
     stamp.hidden = false;
     if (state.mode === "play" || state.mode === "watch") addTally(state.mode, outcome);
+    if (state.mode === "train" && state.human) addLesson(state.lesson, outcome);
     state.endAt = performance.now();
   }
 
@@ -2166,7 +2350,17 @@ onmessage = (e) => {
   function frame(now) {
     const dt = Math.min(now - state.last, 100);
     state.last = now;
-    if (state.waiting && humanAction() !== 0) { state.waiting = false; $("#stamp").hidden = true; }
+    const pressing = humanAction() !== 0;
+    if (state.waiting && pressing) {
+      state.waiting = false; state.human = true; $("#stamp").hidden = true;
+    } else if (state.waiting && state.mode === "train" && now - state.waitStart > 3000) {
+      state.waiting = false; state.human = false; $("#stamp").hidden = true;
+    }
+    // Training: grab the controls mid-flight, or start a lesson right after an attempt ends.
+    if (state.mode === "train" && pressing && !state.waiting) {
+      if (state.done) { if (now - state.endAt > 900) newAttempt({ human: true }); }
+      else if (!state.human) { state.human = true; state.lesson = []; toast("You have the controls. The AI is watching."); }
+    }
     if (state.waiting) {
       state.acc = 0;
     } else if (!state.done) {
@@ -2177,12 +2371,12 @@ onmessage = (e) => {
       renderer.tick(null);
       state.acc = 0;
       const wait = state.mode === "play" ? Infinity : 1600;
-      if (now - state.endAt > wait) newAttempt();
+      if (now - state.endAt > wait) newAttempt({ offer: state.mode === "train" && state.human });
     }
     renderer.draw(state.env, { hideLander: state.done && state.outcome === "crashed" });
     showSensors(state.obs);
     if (state.mode !== "play") showChoice(state.probs, state.action);
-    $("#hud-left").textContent = hudLeft();
+    $("#hud-left").innerHTML = hudLeft();
     $("#hud-right").textContent = `Score ${Math.round(state.score)}    Frame ${state.env.steps}`;
     requestAnimationFrame(frame);
   }
@@ -2190,7 +2384,9 @@ onmessage = (e) => {
   function hudLeft() {
     if (state.mode === "play") return "You're flying";
     if (state.mode === "watch") return "AI pilot: " + $('input[name="pilot"]:checked').closest("label").querySelector("strong").textContent.toLowerCase();
-    return train.steps ? `Your AI after ${fmtSteps(train.steps)} frames of practice` : "Your AI, untrained";
+    if (state.human) return `<span class="you">You're flying a lesson</span>`;
+    if (train.steps) return `Your AI after ${fmtSteps(train.steps)} frames of practice`;
+    return train.copied ? "Your AI, copying you" : "Your AI, untrained";
   }
 
   // ---------- Modes ----------
@@ -2198,7 +2394,7 @@ onmessage = (e) => {
     state.mode = mode;
     $$(".modes button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
     ["play", "watch", "train"].forEach((m) => ($("#pane-" + m).hidden = m !== mode));
-    $("#pad").hidden = mode !== "play";
+    $("#pad").hidden = mode === "watch";
     $("#choice").hidden = mode === "play";
     $("#progress").hidden = mode !== "train";
     state.speed = mode === "watch" ? Number($("#speed [aria-pressed=true]").dataset.speed) : 1;
@@ -2222,11 +2418,11 @@ onmessage = (e) => {
   // ---------- Play controls ----------
   const keyMap = { ArrowUp: "up", KeyW: "up", ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
   window.addEventListener("keydown", (e) => {
-    if (state.mode !== "play") return;
+    if (state.mode === "watch") return;
     const tag = e.target.tagName;
     if (tag === "INPUT" || (e.target.closest && e.target.closest(".modes"))) return;
     if (keyMap[e.code]) { state.keys[keyMap[e.code]] = true; e.preventDefault(); padLight(); }
-    if ((e.code === "Space" || e.code === "Enter") && tag !== "BUTTON") { newAttempt(); e.preventDefault(); }
+    if (state.mode === "play" && (e.code === "Space" || e.code === "Enter") && tag !== "BUTTON") { newAttempt(); e.preventDefault(); }
   });
   window.addEventListener("keyup", (e) => {
     if (keyMap[e.code]) { state.keys[keyMap[e.code]] = false; padLight(); }
@@ -2238,7 +2434,7 @@ onmessage = (e) => {
   }
   $$(".thrust").forEach((b) => {
     const k = b.dataset.key;
-    const on = (e) => { e.preventDefault(); b.setPointerCapture && b.setPointerCapture(e.pointerId); state.keys[k] = true; padLight(); if (state.done) newAttempt(); };
+    const on = (e) => { e.preventDefault(); b.setPointerCapture && b.setPointerCapture(e.pointerId); state.keys[k] = true; padLight(); if (state.done && state.mode === "play") newAttempt(); };
     const off = () => { state.keys[k] = false; padLight(); };
     b.addEventListener("pointerdown", on);
     b.addEventListener("pointerup", off);
@@ -2270,7 +2466,11 @@ onmessage = (e) => {
 
   // ---------- Training ----------
   const PRESETS = { none: { bonus: 0, fee: 0 }, stay: { bonus: 1, fee: 0 }, change: { bonus: 1, fee: 0.05 } };
-  const train = { worker: null, running: false, started: false, steps: 0, brain: new MLP([8, 64, 64, 4], 0.01) };
+  const blankBrain = () => new MLP([8, 64, 64, 4], 0.01);
+  const train = {
+    worker: null, running: false, started: false, steps: 0, brain: blankBrain(),
+    lessons: [], copied: 0, copying: false, stage: null,
+  };
 
   function rewardConfig() {
     const mode = $('input[name="reward"]:checked').value;
@@ -2294,47 +2494,115 @@ onmessage = (e) => {
   $("#fee").addEventListener("input", syncSliders);
   syncSliders();
 
-  function setTrainButton() {
-    const b = $("#train-start");
-    b.textContent = train.running ? "Pause" : train.started ? "Resume" : "Start training";
-    b.classList.toggle("running", train.running);
-    $("#train-reset").disabled = !train.started;
+  function setStatus(stage, head, body) {
+    const box = $("#train-status");
+    box.dataset.stage = stage;
+    $("#status-head").textContent = head;
+    $("#status-body").textContent = body;
   }
 
+  function setButtons() {
+    const b = $("#train-start");
+    b.textContent = train.running ? "Pause" : train.started ? "Resume" : "Start practice";
+    b.classList.toggle("running", train.running);
+    $("#train-reset").disabled = !train.started && !train.copied;
+    const c = $("#copy-btn");
+    const fresh = train.lessons.length - train.copied;
+    c.disabled = train.copying || train.started || fresh <= 0;
+    c.textContent = train.copying ? "Copying…" : train.started ? "Lessons go to it as you fly" : train.copied && !fresh ? "Copied" : "Copy my flying";
+    $("#lessons-clear").hidden = !train.lessons.length || train.started;
+  }
+
+  function ensureWorker() {
+    if (train.worker) return train.worker;
+    const inline = document.getElementById("worker-src");
+    train.worker = inline
+      ? new Worker(URL.createObjectURL(new Blob([inline.textContent], { type: "text/javascript" })))
+      : new Worker("js/train-worker.js");
+    train.worker.onmessage = onWorker;
+    train.worker.onerror = () => {
+      setStatus("crash", "Training couldn't start", "This browser blocked the background worker. Open the page from its web address and try again.");
+      train.running = false; train.copying = false; setButtons();
+    };
+    return train.worker;
+  }
+
+  // ----- Lessons -----
+  function addLesson(frames, outcome) {
+    if (frames.length < 15) return; // a tap, not a flight
+    train.lessons.push({ frames, outcome });
+    renderLessons();
+    if (train.started) {
+      train.worker.postMessage({ type: "lessons", demos: frames });
+      toast("Lesson sent. It will practice with your moves in mind.");
+    } else if (train.lessons.length === 1) {
+      setStatus("copy", "First lesson recorded", "Fly a few more, then press Copy my flying. Even crashes help: it learns which engine you press in each situation.");
+    }
+    setButtons();
+  }
+  function renderLessons() {
+    const L = train.lessons, box = $("#lessons");
+    if (!L.length) { box.innerHTML = '<span class="t-sum">No lessons yet</span>'; return; }
+    const landed = L.filter((l) => l.outcome === "landed").length;
+    const frames = L.reduce((n, l) => n + l.frames.length, 0);
+    box.innerHTML = L.map((l) => `<i class="${l.outcome}" title="${l.outcome}"></i>`).join("") +
+      `<span class="t-sum">${L.length} ${L.length === 1 ? "lesson" : "lessons"}, ${landed} landed, ${frames.toLocaleString()} moves recorded</span>`;
+  }
+  $("#lessons-clear").addEventListener("click", () => {
+    train.lessons = []; train.copied = 0;
+    renderLessons(); setButtons();
+  });
+
+  function allDemos() { return train.lessons.flatMap((l) => l.frames); }
+
+  function copyLessons() {
+    train.copying = true; setButtons();
+    setStatus("copy", "Copying your flying…", "It's studying every situation you were in and which engine you pressed.");
+    ensureWorker().postMessage({ type: "clone", demos: allDemos(), reward: rewardConfig(), seed: (Math.random() * 1e6) | 0 });
+    train.copied = train.lessons.length;
+  }
+  $("#copy-btn").addEventListener("click", copyLessons);
+
+  // ----- Practice -----
   $("#train-start").addEventListener("click", () => {
     if (train.running) {
       train.worker.postMessage({ type: "pause" });
       train.running = false;
+      setStatus(train.stage || "copy", "Paused", "Press Resume to keep practicing. Nothing is lost.");
     } else {
-      if (!train.worker) {
-        const inline = document.getElementById("worker-src");
-        train.worker = inline
-          ? new Worker(URL.createObjectURL(new Blob([inline.textContent], { type: "text/javascript" })))
-          : new Worker("js/train-worker.js");
-        train.worker.onmessage = onProgress;
-        train.worker.onerror = (e) => {
-          $("#train-note").textContent = "Training stopped: this browser blocked the background worker. Open the page from its web address (not as a file) and try again.";
-          train.running = false; setTrainButton();
-        };
-      }
-      train.worker.postMessage({ type: "start", reward: rewardConfig(), seed: (Math.random() * 1e6) | 0 });
+      if (!train.started && train.lessons.length > train.copied) copyLessons();
+      ensureWorker().postMessage({ type: "start", reward: rewardConfig(), seed: (Math.random() * 1e6) | 0 });
       train.running = true; train.started = true;
+      if (!train.stage) setStatus("crash", "Practicing", "It plays 16 games at once in the background and keeps the moves that earn points. The rocket you see is its latest brain, tested.");
     }
-    syncSliders(); setTrainButton();
+    syncSliders(); setButtons();
   });
 
   $("#train-reset").addEventListener("click", () => {
     if (train.worker) train.worker.terminate();
-    Object.assign(train, { worker: null, running: false, started: false, steps: 0, brain: new MLP([8, 64, 64, 4], 0.01) });
+    Object.assign(train, { worker: null, running: false, started: false, steps: 0, brain: blankBrain(), copied: 0, copying: false, stage: null });
     if (state.mode === "train") { state.brain = train.brain; newAttempt(); }
     chart.reset();
     ["#st-score", "#st-landed", "#st-len"].forEach((s) => ($(s).textContent = "–"));
     $("#st-steps").textContent = "0";
-    syncSliders(); setTrainButton();
+    setStatus("", "Not trained yet", "Right now it presses engines at random, so it crashes within a second or two. That's normal.");
+    syncSliders(); setButtons();
   });
 
-  function onProgress(e) {
+  function onWorker(e) {
     const m = e.data;
+    if (m.type === "cloned") {
+      train.copying = false;
+      train.brain = MLP.fromFlat(m.weights);
+      if (state.mode === "train") { state.brain = train.brain; if (!state.human) newAttempt(); }
+      const agree = Math.round(m.agreement * 100), landed = Math.round(m.stats.testLanded * 10);
+      setStatus("copy", "It copied you",
+        `It picks the same engine as you ${agree}% of the time, and landed ${landed} of 10 test flights before any practice. ` +
+        (train.started ? "Now it practices from there." : "The better you fly, the better its start. Press Start practice so it can improve on your flying."));
+      toast("Copied! Watch it fly like you.");
+      setButtons();
+      return;
+    }
     if (m.type !== "progress") return;
     const s = m.stats;
     train.steps = s.steps;
@@ -2345,7 +2613,43 @@ onmessage = (e) => {
     $("#st-score").textContent = Math.round(s.test);
     $("#st-landed").textContent = Math.round(s.testLanded * 100) + "%";
     $("#st-len").textContent = Math.round(s.testLen) + " frames";
+    progressMessage(s);
   }
+
+  // Plain-language progress, from its test flights.
+  const STAGES = ["crash", "slow", "first", "most", "solved"];
+  function progressMessage(s) {
+    const hoverRule = rewardConfig().mode === "stay";
+    let stage, head, body;
+    if (hoverRule && s.testHover >= 0.5) {
+      stage = "loophole"; head = "It found the loophole";
+      body = "Every steady frame pays +1, and landing ends the game, so it hangs in the air collecting points instead. It's doing exactly what it's paid for.";
+    } else if (s.test >= 200 && s.testLanded >= 0.9) {
+      stage = "solved"; head = "Solved!";
+      body = "It lands nearly every time with a score above 200, as good as the trained pilots. Switch to Fly it yourself and try to beat it.";
+    } else if (s.testLanded >= 0.5) {
+      stage = "most"; head = "Landing most of the time";
+      body = "Now it's polishing: softer touchdowns, less fuel, fewer wobbles.";
+    } else if (s.testLanded > 0) {
+      stage = "first"; head = "First landings!";
+      body = "Some test flights now end between the flags. It will get more consistent with practice.";
+    } else if (s.testLen >= 250 || s.test > -100) {
+      stage = "slow"; head = "Learning not to fall";
+      body = "It has figured out the main engine slows it down. Next it has to come down gently, upright, between the flags.";
+    } else {
+      stage = "crash"; head = "Crashing fast, which is normal";
+      body = "It's pressing engines to find out what each one does. Most beginners crash in about a second.";
+    }
+    setStatus(stage, head, body);
+    const rank = (x) => (x === "loophole" ? 99 : STAGES.indexOf(x));
+    if (stage !== train.stage && rank(stage) > rank(train.stage)) {
+      const t = { first: "First landing!", most: "Landing most of the time", solved: "Solved!", loophole: "It found a loophole: hovering" }[stage];
+      if (t) { toast(t, 3200); if (stage !== "loophole") sound.landed(); }
+    }
+    if (rank(stage) > rank(train.stage)) train.stage = stage;
+  }
+
+  setButtons();
 
   // ---------- Go ----------
   setMode("play");

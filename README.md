@@ -6,7 +6,7 @@ An interactive reinforcement-learning playground that runs entirely in the brows
 
 - **Fly it yourself** with the keyboard or on-screen buttons.
 - **Watch a trained AI**: three PPO agents trained in Python, each rewarded differently. One of them learned to cheat.
-- **Train your own AI** live in your browser. Pick what to reward, press start, and watch it go from crashing to landing (or to hovering forever, if you reward the wrong thing).
+- **Train your own AI** live in your browser. Fly a few lessons yourself (keyboard or touch buttons) and it copies you, then it practices for points. Pick what to reward and watch it go from crashing to landing, or to hovering forever if you reward the wrong thing.
 
 ## How the website works
 
@@ -15,6 +15,7 @@ The whole site is one file, `index.html`, so it runs on GitHub Pages with no ser
 - Gymnasium's LunarLander-v3 ported to JavaScript with [planck.js](https://piqnt.com/planck.js/) (Box2D)
 - A tiny neural network and Adam optimizer, written from scratch
 - PPO, matching Stable-Baselines3's settings, running in a background thread so the page stays smooth
+- Imitation learning (behavior cloning) from your own flights, with a fading reminder of your moves during practice
 - The three Python-trained policies, exported to JSON
 - Canvas drawing, synthesized sound effects and the learning-curve chart
 
